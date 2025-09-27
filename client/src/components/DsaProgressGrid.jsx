@@ -8,7 +8,7 @@ export default function DsaProgressGrid() {
 
   useEffect(() => {
     (async () => {
-      const res = await API.get('/dsa');
+      const res = await API.get('/dsas');
       setItems(res.data || []);
     })();
   }, []);
