@@ -1,10 +1,16 @@
-const { Sequelize } = require('sequelize');
+const { Sequelize } = require("sequelize");
 
-// Setup connection
-const sequelize = new Sequelize('job_tracker', 'jobuser', 'jobpass', {
-    host: 'localhost',
-    dialect: 'postgres',
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: "postgres",
+  protocol: "postgres",
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false // <-- Important for Neon/Supabase/Render
+    }
+  }
 });
+
 
 sequelize.authenticate()
     .then(() => console.log('PostgreSQL connected'))
