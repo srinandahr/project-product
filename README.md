@@ -1,1 +1,0 @@
-This is a Vibe Coded Full stack PERN project to track my Job Hunting
