@@ -3,33 +3,26 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import { IoClose } from "react-icons/io5";
 function NavBar() {
 	const [open, setOpen] = useState(false);
-	const [md, setMd] = useState(false);
-	var green = true;
+	const [md, setMd] = useState();
+	const [active, setActive] = useState(false);
+	window.innerWidth >= 768 ? !md && setMd(true) : md && setMd(false);
 	useEffect(() => {
+		const interval = setInterval(() => {
+			setActive((prev) => !prev);
+		}, 3000);
 		window.addEventListener("resize", () => {
-			if (window.innerWidth >= 768) {
-				setMd(true);
-			} else {
-				setMd(false);
-			}
+			window.innerWidth >= 768 ? setMd(true) : setMd(false);
 		});
+
+		return () => clearInterval(interval);
 	}, []);
-	setInterval(() => {
-		if (green) {
-			document.getElementById("thedot").classList.remove("text-green-300");
-			green = false;
-		} else {
-			document.getElementById("thedot").classList.add("text-green-300");
-			green = true;
-		}
-	}, 5000);
 
 	return (
 		<div className="absolute  mt-0 border-b-2 border-green-300 w-full">
 			<nav className="flex justify-between items-center p-2 md:m-2">
 				<div className="flex">
 					<h1 className="font-[khand] text-xl md:text-2xl font-semibold md:font-bold cursor-pointer hover:text-green-300">Project Product</h1>
-					<h1 className="font-[khand] text-xl md:text-2xl font-semibold md:font-bold cursor-pointer" id="thedot">
+					<h1 className={`font-[khand] text-xl md:text-2xl font-semibold md:font-bold cursor-pointer ${active ? "text-green-300" : "text-white"}`} id="thedot">
 						.
 					</h1>
 				</div>
@@ -57,7 +50,7 @@ function NavBar() {
 			</nav>
 			{open && !md ? (
 				<>
-					<div className="flex flex-col items-center md:hidden">
+					<div className="flex flex-col items-center gap-2 md:hidden p-10">
 						<a className="cursor-pointer" href="#">
 							Applications
 						</a>
