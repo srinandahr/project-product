@@ -1,4 +1,4 @@
-import Logo from "./logo"
+import Logo from "./Logo"
 import User from "./User"
 import Hamburger from "./Hamburger"
 import Menu from "./Menu"
