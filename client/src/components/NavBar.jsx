@@ -2,6 +2,7 @@ import Logo from "./logo"
 import User from "./User"
 import Hamburger from "./Hamburger"
 import Menu from "./Menu"
+//Changed name
 function Navbar() {
 
   return (
