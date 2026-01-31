@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  password_hash String
+  created_at    DateTime @default(now())
+
+  jobApplications JobApplication[]
+  projects        Project[]
+  resumes         Resume[]
+  leetcodeProfile LeetCodeProfile?
+  dailyCheckins   DailyCheckin[]
+}
+
+model JobApplication {
+  id           String   @id @default(uuid())
+  user_id      String
+  company_name String
+  role         String
+  job_type     String // Full-time / Internship / Contract
+  location     String
+  status       String // Applied, Interviewing, Offer, Rejected
+  applied_date DateTime
+  source       String // LinkedIn, Referral, Careers page
+  notes        String?
+  created_at   DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  user_id     String
+  title       String
+  description String
+  tech_stack  String[]
+  repo_url    String?
+  live_url    String?
+  status      String // In Progress / Completed
+  start_date  DateTime?
+  end_date    DateTime?
+  
+  user        User     @relation(fields: [user_id], references: [id])
+}
+
+model Resume {
+  id         String   @id @default(uuid())
+  user_id    String
+  title      String
+  file_url   String
+  tags       String[]
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id])
+}
+
+model LeetCodeProfile {
+  id              String   @id @default(uuid())
+  user_id         String   @unique
+  username        String
+  total_solved    Int      @default(0)
+  easy_solved     Int      @default(0)
+  medium_solved   Int      @default(0)
+  hard_solved     Int      @default(0)
+  ranking         Int?
+  last_synced_at  DateTime @default(now())
+
+  user            User     @relation(fields: [user_id], references: [id])
+}
+
+model DailyCheckin {
+  id                String   @id @default(uuid())
+  user_id           String
+  date              DateTime @default(now())
+  applied_jobs      Boolean  @default(false)
+  practiced_dsa     Boolean  @default(false)
+  worked_on_project Boolean  @default(false)
+  resume_updated    Boolean  @default(false)
+  notes             String?
+
+  user              User     @relation(fields: [user_id], references: [id])
+}
