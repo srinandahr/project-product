@@ -6,8 +6,11 @@ import router from './routes';
 const app = express();
 
 app.use(cors());
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 app.use('/api', router);
 

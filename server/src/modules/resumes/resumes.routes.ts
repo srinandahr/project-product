@@ -6,7 +6,9 @@ const router = Router();
 
 router.use(authenticate);
 
-router.post('/', resumeController.createResume);
+import { upload } from '../../middlewares/upload.middleware';
+
+router.post('/', upload.single('file'), resumeController.createResume);
 router.get('/', resumeController.getResumes);
 router.patch('/:id', resumeController.updateResume);
 router.delete('/:id', resumeController.deleteResume);

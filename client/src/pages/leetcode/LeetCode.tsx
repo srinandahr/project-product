@@ -1,12 +1,14 @@
+import { useState, useEffect } from 'react';
 import {
     Trophy,
     Flame,
     RefreshCw,
     ExternalLink,
     Target,
-    CheckCircle2
+    CheckCircle2,
+    UserCircle,
+    LogOut
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import {
     BarChart,
     Bar,
@@ -16,46 +18,110 @@ import {
     ResponsiveContainer,
     Cell
 } from 'recharts';
+import { useLeetCodeStore } from '../../store/leetcode.store';
+import { formatDistanceToNow } from 'date-fns';
 
-const DifficultyChip = ({ difficulty }: { difficulty: string }) => {
-    const styles = {
-        Easy: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-        Medium: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-        Hard: "bg-red-500/10 text-red-400 border-red-500/20",
-    }[difficulty] || "bg-muted/10 text-muted-foreground border-border/20";
 
-    return (
-        <span className={cn("px-2 py-0.5 rounded text-xs font-medium border", styles)}>
-            {difficulty}
-        </span>
-    );
-};
-
-const MOCK_PROBLEMS = [
-    { id: 1, title: 'Two Sum', difficulty: 'Easy', lastAttempted: '2 days ago', status: 'Solved' },
-    { id: 2, title: 'LRU Cache', difficulty: 'Medium', lastAttempted: '5 days ago', status: 'Solved' },
-    { id: 3, title: 'Merge k Sorted Lists', difficulty: 'Hard', lastAttempted: 'Today', status: 'Attempting' },
-];
-
-const DATA = [
-    { name: 'Easy', value: 150, color: '#10b981' },
-    { name: 'Medium', value: 240, color: '#eab308' },
-    { name: 'Hard', value: 62, color: '#ef4444' },
-];
 
 export default function LeetCode() {
+    const { username, stats, isLoading, error, setUsername, fetchStats, disconnect } = useLeetCodeStore();
+    const [inputUsername, setInputUsername] = useState('');
+
+    useEffect(() => {
+        if (username && !stats) {
+            fetchStats();
+        }
+    }, [username, stats, fetchStats]);
+
+    const handleConnect = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (inputUsername.trim()) {
+            setUsername(inputUsername.trim());
+        }
+    };
+
+    if (!username) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+                <div className="p-6 bg-card border border-border rounded-xl shadow-sm max-w-md w-full text-center">
+                    <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4 text-muted-foreground">
+                        <UserCircle size={32} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground">Connect LeetCode</h2>
+                    <p className="text-muted-foreground mt-2 mb-6">Enter your LeetCode username to verify your profile and fetch stats.</p>
+
+                    <form onSubmit={handleConnect} className="space-y-4">
+                        <input
+                            type="text"
+                            value={inputUsername}
+                            onChange={(e) => setInputUsername(e.target.value)}
+                            placeholder="username"
+                            className="w-full bg-background border border-border rounded-lg py-2.5 px-4 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            required
+                        />
+                        <button
+                            type="submit"
+                            className="w-full bg-primary hover:bg-indigo-600 text-white font-medium py-2.5 rounded-lg transition-all"
+                        >
+                            Connect Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    if (isLoading && !stats) {
+        return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Loading LeetCode profile...</div>;
+    }
+
+    if (error && !stats) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+                <div className="text-red-400 font-medium">Error: {error}</div>
+                <button
+                    onClick={disconnect}
+                    className="text-primary hover:underline"
+                >
+                    Try Another Username
+                </button>
+            </div>
+        );
+    }
+
+    const chartData = stats ? [
+        { name: 'Easy', value: stats.easySolved, color: '#10b981' },
+        { name: 'Medium', value: stats.mediumSolved, color: '#eab308' },
+        { name: 'Hard', value: stats.hardSolved, color: '#ef4444' },
+    ] : [];
+
     return (
         <div className="space-y-8">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">LeetCode Tracker</h1>
-                    <p className="text-muted-foreground mt-1">Consistency is key. Keep the streak alive.</p>
+                    <p className="text-muted-foreground mt-1">
+                        Tracking <span className="text-foreground font-medium">{username}</span>'s progress.
+                    </p>
                 </div>
-                <button className="flex items-center gap-2 bg-card border border-border hover:bg-accent text-muted-foreground px-4 py-2 rounded-lg transition-all font-medium">
-                    <RefreshCw size={20} />
-                    Sync Profile
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => fetchStats()}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 bg-card border border-border hover:bg-accent text-muted-foreground px-4 py-2 rounded-lg transition-all font-medium disabled:opacity-50"
+                    >
+                        <RefreshCw size={20} className={isLoading ? "animate-spin" : ""} />
+                        Sync Data
+                    </button>
+                    <button
+                        onClick={disconnect}
+                        className="flex items-center gap-2 bg-card border border-border hover:bg-red-500/10 text-muted-foreground hover:text-red-400 px-4 py-2 rounded-lg transition-all font-medium"
+                        title="Disconnect"
+                    >
+                        <LogOut size={20} />
+                    </button>
+                </div>
             </div>
 
             {/* Top Stats */}
@@ -66,7 +132,7 @@ export default function LeetCode() {
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Total Solved</p>
-                        <p className="text-3xl font-bold text-foreground">452</p>
+                        <p className="text-3xl font-bold text-foreground">{stats?.totalSolved}</p>
                     </div>
                 </div>
 
@@ -75,8 +141,9 @@ export default function LeetCode() {
                         <Flame size={32} />
                     </div>
                     <div>
+                        {/* Show Streak instead of Hard Solved as requested */}
                         <p className="text-sm text-muted-foreground">Current Streak</p>
-                        <p className="text-3xl font-bold text-foreground">27 Days</p>
+                        <p className="text-3xl font-bold text-foreground">{stats?.streak ?? 0} Days</p>
                     </div>
                 </div>
 
@@ -86,7 +153,7 @@ export default function LeetCode() {
                     </div>
                     <div>
                         <p className="text-sm text-muted-foreground">Global Ranking</p>
-                        <p className="text-3xl font-bold text-foreground">125,402</p>
+                        <p className="text-3xl font-bold text-foreground">{stats?.ranking.toLocaleString()}</p>
                     </div>
                 </div>
             </div>
@@ -97,7 +164,7 @@ export default function LeetCode() {
                     <h3 className="text-lg font-bold text-foreground mb-6 w-full text-left">Difficulty Breakdown</h3>
                     <div className="h-[250px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={DATA} layout="vertical">
+                            <BarChart data={chartData} layout="vertical">
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" stroke="#9ca3af" width={60} />
                                 <Tooltip
@@ -105,7 +172,7 @@ export default function LeetCode() {
                                     contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--foreground)' }}
                                 />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                                    {DATA.map((entry, index) => (
+                                    {chartData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Bar>
@@ -118,29 +185,31 @@ export default function LeetCode() {
                 <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-bold text-foreground">Recent Activity</h3>
-                        <a href="https://leetcode.com" target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
+                        <a href={`https://leetcode.com/${username}`} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
                             Go to LeetCode <ExternalLink size={14} />
                         </a>
                     </div>
 
                     <div className="space-y-4">
-                        {MOCK_PROBLEMS.map((problem) => (
-                            <div key={problem.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg group hover:bg-muted/50 transition-all">
+                        {stats?.recentSubmissions.length === 0 && (
+                            <div className="text-muted-foreground text-center py-4">No recent activity</div>
+                        )}
+                        {stats?.recentSubmissions.map((problem, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg group hover:bg-muted/50 transition-all">
                                 <div className="flex items-center gap-4">
-                                    <div className={cn(
-                                        "p-2 rounded-lg",
-                                        problem.status === 'Solved' ? "text-emerald-400 bg-emerald-500/10" : "text-amber-400 bg-amber-500/10"
-                                    )}>
-                                        {problem.status === 'Solved' ? <CheckCircle2 size={20} /> : <RefreshCw size={20} />}
+                                    <div className="p-2 rounded-lg text-emerald-400 bg-emerald-500/10">
+                                        <CheckCircle2 size={20} />
                                     </div>
                                     <div>
-                                        <h4 className="font-medium text-foreground group-hover:text-foreground transition-colors">
+                                        <a href={`https://leetcode.com/problems/${problem.titleSlug}`} target="_blank" rel="noreferrer" className="font-medium text-foreground group-hover:text-primary transition-colors hover:underline">
                                             {problem.title}
-                                        </h4>
-                                        <p className="text-xs text-muted-foreground mt-1">Last attempted: {problem.lastAttempted}</p>
+                                        </a>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {formatDistanceToNow(new Date(parseInt(problem.timestamp) * 1000), { addSuffix: true })}
+                                        </p>
                                     </div>
                                 </div>
-                                <DifficultyChip difficulty={problem.difficulty} />
+                                {/* Difficulty not in recent submission query by default in this endpoint, omitting chip or needing extra query. Omitting for simplicity. */}
                             </div>
                         ))}
                     </div>

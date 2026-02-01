@@ -4,7 +4,33 @@ import * as resumeService from './resumes.service';
 
 export const createResume = async (req: AuthRequest, res: Response) => {
     try {
-        const resume = await resumeService.createResume(req.user!.id, req.body);
+        let fileUrl = req.body.file_url;
+
+        if (req.file) {
+            // Construct URL for uploaded file
+            // Assuming server is running on localhost/domain. 
+            // Ideally base URL should be from env config.
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            fileUrl = `${baseUrl}/uploads/resumes/${req.file.filename}`;
+        }
+
+        let tags = req.body.tags;
+        if (typeof tags === 'string') {
+            try {
+                tags = JSON.parse(tags);
+            } catch (e) {
+                // Ignore error, might be plain string or invalid json, validation will handle it
+                tags = [tags];
+            }
+        }
+
+        const resumeData = {
+            ...req.body,
+            tags,
+            file_url: fileUrl
+        };
+
+        const resume = await resumeService.createResume(req.user!.id, resumeData);
         res.status(201).json(resume);
     } catch (error: any) {
         res.status(400).json({ error: error.message });

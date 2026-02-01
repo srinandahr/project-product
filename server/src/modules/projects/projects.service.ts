@@ -7,7 +7,7 @@ const projectSchema = z.object({
     tech_stack: z.array(z.string()),
     repo_url: z.string().url().optional().nullable(),
     live_url: z.string().url().optional().nullable(),
-    status: z.enum(['In Progress', 'Completed']),
+    status: z.enum(['Not Started', 'In Progress', 'Completed']),
     start_date: z.string().transform((str) => new Date(str)).optional().nullable(),
     end_date: z.string().transform((str) => new Date(str)).optional().nullable(),
 });
