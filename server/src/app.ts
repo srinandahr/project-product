@@ -5,7 +5,15 @@ import router from './routes';
 
 const app = express();
 
-app.use(cors());
+app.use(
+    cors({
+        origin: [
+            "http://localhost:5173",
+            "https://project-product-delta.vercel.app"
+        ],
+        credentials: true
+    })
+);
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
