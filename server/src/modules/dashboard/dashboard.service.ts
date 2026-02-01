@@ -1,4 +1,5 @@
 import prisma from '../../config/db';
+import { getStreak, getTodayCheckin } from '../dailyCheckins/dailyCheckins.service';
 
 export const getDashboardStats = async (userId: string) => {
     // Job Stats
@@ -59,12 +60,56 @@ export const getDashboardStats = async (userId: string) => {
         }
     });
 
+    // Check-in Streak
+    const { streak: checkinStreak } = await getStreak(userId);
+    const todayCheckin = await getTodayCheckin(userId);
+
+    // Graph Data - Last 7 Days
+    const activityData = [];
+    const today = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        d.setHours(0, 0, 0, 0);
+
+        const nextDay = new Date(d);
+        nextDay.setDate(d.getDate() + 1);
+
+        const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+
+        // Count Job Applications for this day
+        const applicationCount = await prisma.jobApplication.count({
+            where: {
+                user_id: userId,
+                created_at: {
+                    gte: d,
+                    lt: nextDay
+                }
+            }
+        });
+
+        // For LeetCode, strictly speaking we don't have daily history stored yet.
+        // We will default to 0 to be accurate to "DB state", or we could potentially
+        // infer from checkins if we wanted. For now, 0 or mock is safer than lying.
+        // Let's output 0. The user can see "Total Solved" in the card.
+
+        activityData.push({
+            day: dayName,
+            applications: applicationCount,
+            leetcode: 0
+        });
+    }
+
     return {
         jobStats,
         leetcode: {
             totalSolved: leetcodeProfile?.total_solved || 0,
-            streak: 0, // Mock or fetch from LeetCode
+            streak: 0,
         },
+        checkinStreak,
+        todayCheckin,
         projects: projectStats,
+        activityData,
     };
 };

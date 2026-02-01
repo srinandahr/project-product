@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAuthStore } from '../../store/auth.store';
 import {
     LineChart,
@@ -11,10 +12,10 @@ import {
 import {
     Briefcase,
     Code2,
-    CheckCircle2,
     Flame,
+    CheckCircle2,
     TrendingUp,
-    MoreHorizontal
+    Mic
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
@@ -22,8 +23,8 @@ import { format } from 'date-fns';
 const StatCard = ({ title, value, icon: Icon, trend, color }: any) => (
     <div className="bg-card border border-border p-6 rounded-xl hover:border-muted-foreground/25 transition-all">
         <div className="flex items-center justify-between mb-4">
-            <div className={cn("p-3 rounded-lg bg-opacity-10", color)}>
-                <Icon size={24} className={color.replace('bg-', 'text-')} />
+            <div className={cn("p-3 rounded-lg bg-opacity-10 text-white", color)}>
+                <Icon size={24} className="text-inherit" />
             </div>
             {trend && (
                 <div className="flex items-center gap-1 text-emerald-400 text-sm font-medium">
@@ -56,25 +57,49 @@ const CheckInItem = ({ label, checked }: { label: string; checked: boolean }) =>
     </div>
 );
 
-const activityData = [
-    { day: 'Mon', applications: 4, leetcode: 2 },
-    { day: 'Tue', applications: 6, leetcode: 3 },
-    { day: 'Wed', applications: 2, leetcode: 5 },
-    { day: 'Thu', applications: 8, leetcode: 1 },
-    { day: 'Fri', applications: 5, leetcode: 4 },
-    { day: 'Sat', applications: 1, leetcode: 6 },
-    { day: 'Sun', applications: 0, leetcode: 2 },
-];
+
 
 export default function Dashboard() {
-    const { user } = useAuthStore();
+    const { user, token } = useAuthStore();
+    const [stats, setStats] = React.useState<any>(null);
+
+    React.useEffect(() => {
+        if (token) {
+            fetchStats();
+        }
+    }, [token]);
+
+    const fetchStats = async () => {
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/dashboard/overview', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setStats(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch dashboard stats', error);
+        }
+    };
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return { text: 'Good morning', icon: '☀️' };
+        if (hour < 18) return { text: 'Good afternoon', icon: '🌤️' };
+        return { text: 'Good evening', icon: '🌙' };
+    };
+
+    const greeting = getGreeting();
 
     return (
         <div className="space-y-8">
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                    Good morning, {user?.name?.split(' ')[0] || 'Dev'}! ☀️
+                    {greeting.text}, {user?.name?.split(' ')[0] || 'Dev'}! {greeting.icon}
                 </h1>
                 <p className="text-muted-foreground mt-2">Here's what's happening today.</p>
             </div>
@@ -83,27 +108,27 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Applications"
-                    value="124"
+                    value={stats?.jobStats?.total || 0}
                     icon={Briefcase}
-                    trend="+12 this week"
+                    trend={stats?.jobStats?.applied > 0 ? `+${stats.jobStats.applied} active` : undefined}
                     color="bg-blue-500"
                 />
                 <StatCard
                     title="Interviews"
-                    value="8"
-                    icon={MoreHorizontal}
+                    value={stats?.jobStats?.interviews || 0}
+                    icon={Mic}
                     color="bg-yellow-500"
                 />
                 <StatCard
                     title="LeetCode Solved"
-                    value="452"
+                    value={stats?.leetcode?.totalSolved || 0}
                     icon={Code2}
-                    trend="+5 today"
+                    trend={stats?.leetcode?.streak > 0 ? `${stats.streak} day streak` : undefined}
                     color="bg-orange-500"
                 />
                 <StatCard
                     title="Current Streak"
-                    value="27 Days"
+                    value={`${stats?.checkinStreak || 0} Days`}
                     icon={Flame}
                     color="bg-red-500"
                 />
@@ -115,7 +140,7 @@ export default function Dashboard() {
                     <h2 className="text-lg font-bold text-foreground mb-6">Activity Overview</h2>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={activityData}>
+                            <LineChart data={stats?.activityData || []}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                                 <XAxis dataKey="day" stroke="#9ca3af" />
                                 <YAxis stroke="#9ca3af" />
@@ -137,16 +162,16 @@ export default function Dashboard() {
                     </div>
 
                     <div className="space-y-4">
-                        <CheckInItem label="Applied to jobs" checked={true} />
-                        <CheckInItem label="Practiced DSA" checked={true} />
-                        <CheckInItem label="Worked on project" checked={false} />
-                        <CheckInItem label="Resume updated" checked={false} />
+                        <CheckInItem label="Applied to jobs" checked={stats?.todayCheckin?.applied_jobs || false} />
+                        <CheckInItem label="Practiced DSA" checked={stats?.todayCheckin?.practiced_dsa || false} />
+                        <CheckInItem label="Worked on project" checked={stats?.todayCheckin?.worked_on_project || false} />
+                        <CheckInItem label="Resume updated" checked={stats?.todayCheckin?.resume_updated || false} />
                     </div>
 
                     <div className="mt-8 pt-6 border-t border-border">
                         <h3 className="text-sm font-medium text-muted-foreground mb-3">Today's Notes</h3>
                         <div className="bg-muted/50 rounded-lg p-4 text-sm text-foreground italic">
-                            "Solved Two Sum II (Medium). Applied to Stripe and Netflix."
+                            {stats?.todayCheckin?.notes ? `"${stats.todayCheckin.notes}"` : "No notes for today."}
                         </div>
                     </div>
                 </div>

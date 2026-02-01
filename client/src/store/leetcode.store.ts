@@ -43,7 +43,17 @@ export const useLeetCodeStore = create<LeetCodeState>()(
 
                 set({ isLoading: true, error: null });
                 try {
-                    const response = await fetch(`http://127.0.0.1:5000/api/leetcode/${username}`);
+                    // Dynamic import or accessing window/localStorage might be brittle, 
+                    // but assuming useAuthStore is available globally or we can import it.
+                    // Better: Import usage at top.
+                    const authStore = (await import('./auth.store')).useAuthStore;
+                    const token = authStore.getState().token;
+
+                    const response = await fetch(`http://127.0.0.1:5000/api/leetcode/${username}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
                     if (!response.ok) {
                         const err = await response.json();
                         throw new Error(err.error || 'Failed to fetch stats');

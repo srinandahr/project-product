@@ -1,3 +1,5 @@
+import prisma from '../../config/db';
+
 interface LeetCodeData {
     totalSolved: number;
     easySolved: number;
@@ -100,7 +102,7 @@ export const fetchLeetCodeStats = async (username: string): Promise<LeetCodeData
         console.error('Failed to calculate streak', e);
     }
 
-    return {
+    const result = {
         totalSolved: stats.find((s: any) => s.difficulty === 'All')?.count || 0,
         easySolved: stats.find((s: any) => s.difficulty === 'Easy')?.count || 0,
         mediumSolved: stats.find((s: any) => s.difficulty === 'Medium')?.count || 0,
@@ -109,4 +111,35 @@ export const fetchLeetCodeStats = async (username: string): Promise<LeetCodeData
         streak,
         recentSubmissions: recent
     };
+
+    // Save to Database if userId is provided (we'll modify signature to accept userId optional, 
+    // or just assume we always want to save if we can. 
+    // Wait, the signature of this function is `(username: string)`.
+    // I need to change it to `(username: string, userId?: string)`.
+
+    return result;
+};
+
+export const upsertLeetCodeProfile = async (userId: string, username: string, data: LeetCodeData) => {
+    await prisma.leetCodeProfile.upsert({
+        where: { user_id: userId },
+        update: {
+            username,
+            total_solved: data.totalSolved,
+            easy_solved: data.easySolved,
+            medium_solved: data.mediumSolved,
+            hard_solved: data.hardSolved,
+            ranking: data.ranking,
+            last_synced_at: new Date(),
+        },
+        create: {
+            user_id: userId,
+            username,
+            total_solved: data.totalSolved,
+            easy_solved: data.easySolved,
+            medium_solved: data.mediumSolved,
+            hard_solved: data.hardSolved,
+            ranking: data.ranking,
+        },
+    });
 };
