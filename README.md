@@ -1,0 +1,1 @@
+This is an entirely Vibe Coded project in Antigravity. Feel free to download and utilize the project as your own!
