@@ -89,15 +89,44 @@ export const getDashboardStats = async (userId: string) => {
             }
         });
 
-        // For LeetCode, strictly speaking we don't have daily history stored yet.
-        // We will default to 0 to be accurate to "DB state", or we could potentially
-        // infer from checkins if we wanted. For now, 0 or mock is safer than lying.
-        // Let's output 0. The user can see "Total Solved" in the card.
+        // Parse LeetCode submission history
+        const calendar = leetcodeProfile?.submission_calendar ? JSON.parse(leetcodeProfile.submission_calendar) : {};
+
+        // LeetCode timestamps are unix seconds. 
+        // We need to check if the day matches.
+        // Convert 'd' (which is 00:00:00 local) into a timestamp range or just check exact day match.
+        // Simplest: Iterate calendar keys, convert to date string, check match.
+
+        let leetcodeCount = 0;
+
+        // Optimize: Create a map or lookup once outside the loop if performance matters, 
+        // but for 7 days and small calendar it's fine.
+        // Actually, let's just do a quick lookup here.
+
+        const targetDateStr = d.toDateString();
+
+        Object.keys(calendar).forEach(ts => {
+            const date = new Date(parseInt(ts) * 1000);
+            if (date.toDateString() === targetDateStr) {
+                leetcodeCount += calendar[ts]; // Add count for this submission entry (usually just 1 or aggregated)
+            }
+        });
+
+        // The submissionCalendar format from LeetCode is { timestamp: count } where timestamp is start of day or specific sub??
+        // LeetCode calendar keys are usually the timestamp of the *day start* (UTC) or specific submission.
+        // Let's assume keys are entry timestamps. 
+        // Actually LeetCode 'submissionCalendar' keys are unix seconds for the *start of the day* in UTC.
+        // So we might need to be careful with timezones.
+        // However, converting both to `toDateString` (local) might be "good enough" for personal dashboard 
+        // or we can just try to match.
+        // Better approach:
+        // Convert d to timestamp / 1000. 
+        // Iterate calendar, check if entry falls within [startOfDay, endOfDay].
 
         activityData.push({
             day: dayName,
             applications: applicationCount,
-            leetcode: 0
+            leetcode: leetcodeCount
         });
     }
 

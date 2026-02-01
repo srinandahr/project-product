@@ -73,6 +73,7 @@ model LeetCodeProfile {
   medium_solved   Int      @default(0)
   hard_solved     Int      @default(0)
   ranking         Int?
+  submission_calendar String? // JSON string of timestamp -> count
   last_synced_at  DateTime @default(now())
 
   user            User     @relation(fields: [user_id], references: [id])

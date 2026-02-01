@@ -13,6 +13,7 @@ interface LeetCodeData {
         statusDetails?: string;
     }>;
     streak: number;
+    submissionCalendar: string;
 }
 
 export const fetchLeetCodeStats = async (username: string): Promise<LeetCodeData> => {
@@ -109,13 +110,9 @@ export const fetchLeetCodeStats = async (username: string): Promise<LeetCodeData
         hardSolved: stats.find((s: any) => s.difficulty === 'Hard')?.count || 0,
         ranking: profile?.ranking || 0,
         streak,
-        recentSubmissions: recent
+        recentSubmissions: recent,
+        submissionCalendar: data.data.matchedUser.submissionCalendar || '{}'
     };
-
-    // Save to Database if userId is provided (we'll modify signature to accept userId optional, 
-    // or just assume we always want to save if we can. 
-    // Wait, the signature of this function is `(username: string)`.
-    // I need to change it to `(username: string, userId?: string)`.
 
     return result;
 };
@@ -130,6 +127,7 @@ export const upsertLeetCodeProfile = async (userId: string, username: string, da
             medium_solved: data.mediumSolved,
             hard_solved: data.hardSolved,
             ranking: data.ranking,
+            submission_calendar: data.submissionCalendar,
             last_synced_at: new Date(),
         },
         create: {
@@ -140,6 +138,7 @@ export const upsertLeetCodeProfile = async (userId: string, username: string, da
             medium_solved: data.mediumSolved,
             hard_solved: data.hardSolved,
             ranking: data.ranking,
+            submission_calendar: data.submissionCalendar,
         },
     });
 };
