@@ -8,6 +8,7 @@ import {
 import { cn } from '../../lib/utils';
 import { format } from 'date-fns';
 import { useAuthStore } from '../../store/auth.store';
+import api from '../../lib/api';
 
 const CHECKLIST_ITEMS = [
     { id: 'jobs', label: 'Applied to jobs', description: 'At least 5 applications sent' },
@@ -33,24 +34,18 @@ export default function Checkin() {
     const fetchTodayCheckin = async () => {
         try {
             setIsLoading(true);
-            const response = await fetch('http://127.0.0.1:5000/api/checkins/today', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.get('/checkins/today');
+            const data = response.data;
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data && !data.message) {
-                    // Map backend fields to frontend IDs
-                    setCheckedItems({
-                        jobs: data.applied_jobs,
-                        dsa: data.practiced_dsa,
-                        project: data.worked_on_project,
-                        resume: data.resume_updated,
-                    });
-                    setNotes(data.notes || '');
-                }
+            if (data && !data.message) {
+                // Map backend fields to frontend IDs
+                setCheckedItems({
+                    jobs: data.applied_jobs,
+                    dsa: data.practiced_dsa,
+                    project: data.worked_on_project,
+                    resume: data.resume_updated,
+                });
+                setNotes(data.notes || '');
             }
         } catch (error) {
             console.error('Failed to fetch checkin', error);
@@ -72,18 +67,7 @@ export default function Checkin() {
                 notes: currentNotes
             };
 
-            const response = await fetch('http://127.0.0.1:5000/api/checkins', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save');
-            }
+            await api.post('/checkins', payload);
 
             // Optional: Don't show success message for every auto-save to avoid noise,
             // or show a subtle "Saved" indicator.

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import api from '../lib/api';
 
 interface LeetCodeStats {
     totalSolved: number;
@@ -43,25 +44,14 @@ export const useLeetCodeStore = create<LeetCodeState>()(
 
                 set({ isLoading: true, error: null });
                 try {
-                    // Dynamic import or accessing window/localStorage might be brittle, 
-                    // but assuming useAuthStore is available globally or we can import it.
-                    // Better: Import usage at top.
-                    const authStore = (await import('./auth.store')).useAuthStore;
-                    const token = authStore.getState().token;
+                    // Import usage at top, but keeping consistent with existing pattern if needed, 
+                    // though importing 'api' usually imports auth store indirectly. 
+                    // We'll trust 'api' interceptor to handle token.
 
-                    const response = await fetch(`http://127.0.0.1:5000/api/leetcode/${username}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.error || 'Failed to fetch stats');
-                    }
-                    const data = await response.json();
-                    set({ stats: data, isLoading: false });
+                    const response = await api.get(`/leetcode/${username}`);
+                    set({ stats: response.data, isLoading: false });
                 } catch (error: any) {
-                    set({ error: error.message, isLoading: false });
+                    set({ error: error.message || 'Failed to fetch stats', isLoading: false });
                 }
             }
         }),

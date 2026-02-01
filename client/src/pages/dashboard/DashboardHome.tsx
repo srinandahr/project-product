@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuthStore } from '../../store/auth.store';
+import api from '../../lib/api';
 import {
     LineChart,
     Line,
@@ -71,15 +72,8 @@ export default function Dashboard() {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/dashboard/overview', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setStats(data);
-            }
+            const response = await api.get('/dashboard/overview');
+            setStats(response.data);
         } catch (error) {
             console.error('Failed to fetch dashboard stats', error);
         }
