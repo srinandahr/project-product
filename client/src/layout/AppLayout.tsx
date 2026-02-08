@@ -12,7 +12,8 @@ import {
     Menu,
     X,
     Sun,
-    Moon
+    Moon,
+    Sparkles
 } from 'lucide-react';
 import { useThemeStore } from '../store/theme.store';
 import { cn } from '../lib/utils';
@@ -46,6 +47,7 @@ export default function AppLayout() {
         { to: '/app/projects', label: 'Projects', icon: FolderGit2 },
         { to: '/app/resumes', label: 'Resumes', icon: FileText },
         { to: '/app/leetcode', label: 'LeetCode', icon: Code2 },
+        { to: '/app/recommendations', label: 'Recommended', icon: Sparkles },
         { to: '/app/checkin', label: 'Check-in', icon: CalendarCheck },
     ];
 

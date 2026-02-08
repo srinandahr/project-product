@@ -8,6 +8,7 @@ import Projects from './pages/projects/Projects';
 import Resumes from './pages/resumes/Resumes';
 import LeetCode from './pages/leetcode/LeetCode';
 import Checkin from './pages/checkin/Checkin';
+import JobRecommendations from './pages/recommendations/JobRecommendations';
 import Dashboard from './pages/dashboard/DashboardHome';
 import { useAuthStore } from './store/auth.store';
 import { useThemeStore } from './store/theme.store';
@@ -77,6 +78,7 @@ function App() {
         <Route path="resumes" element={<Resumes />} />
         <Route path="leetcode" element={<LeetCode />} />
         <Route path="checkin" element={<Checkin />} />
+        <Route path="recommendations" element={<JobRecommendations />} />
       </Route>
     </Routes>
   );

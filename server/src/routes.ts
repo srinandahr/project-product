@@ -9,6 +9,7 @@ import leetcodeRoutes from './modules/leetcode/leetcode.routes';
 
 import dailyCheckinsRoutes from './modules/dailyCheckins/dailyCheckins.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
+import recommendationsRoutes from './modules/recommendations/recommendations.routes';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/resumes', resumesRoutes);
 router.use('/leetcode', leetcodeRoutes);
 router.use('/checkins', dailyCheckinsRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/recommendations', recommendationsRoutes);
 
 export default router;

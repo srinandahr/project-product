@@ -19,6 +19,7 @@ model User {
   resumes         Resume[]
   leetcodeProfile LeetCodeProfile?
   dailyCheckins   DailyCheckin[]
+  recommendedJobs RecommendedJob[]
 }
 
 model JobApplication {
@@ -90,4 +91,17 @@ model DailyCheckin {
   notes             String?
 
   user              User     @relation(fields: [user_id], references: [id])
+}
+
+model RecommendedJob {
+  id               String   @id @default(uuid())
+  user_id          String
+  company          String
+  title            String
+  job_url          String
+  location         String
+  score            Float
+  created_at       DateTime @default(now())
+
+  user             User     @relation(fields: [user_id], references: [id])
 }
