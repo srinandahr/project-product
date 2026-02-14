@@ -1,7 +1,8 @@
 import fs from 'fs';
-const pdf = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 export const parseResume = async (input: string | Buffer): Promise<string> => {
+    let parser;
     try {
         let dataBuffer: Buffer;
 
@@ -12,10 +13,15 @@ export const parseResume = async (input: string | Buffer): Promise<string> => {
             dataBuffer = fs.readFileSync(input);
         }
 
-        const data = await pdf(dataBuffer);
-        return data.text;
+        parser = new PDFParse({ data: dataBuffer });
+        const result = await parser.getText();
+        return result.text;
     } catch (error) {
         console.error('Error parsing resume:', error);
         throw new Error('Failed to parse resume');
+    } finally {
+        if (parser) {
+            await parser.destroy();
+        }
     }
 };
