@@ -50,7 +50,16 @@ export const createResume = async (req: AuthRequest, res: Response) => {
 export const getResumes = async (req: AuthRequest, res: Response) => {
     try {
         const resumes = await resumeService.getResumes(req.user!.id);
-        res.json(resumes);
+
+        // Ensure URLs are HTTPS in production (fixes mixed content for existing data)
+        const secureResumes = resumes.map(resume => ({
+            ...resume,
+            file_url: (process.env.NODE_ENV === 'production' && resume.file_url.startsWith('http:'))
+                ? resume.file_url.replace('http:', 'https:')
+                : resume.file_url
+        }));
+
+        res.json(secureResumes);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
