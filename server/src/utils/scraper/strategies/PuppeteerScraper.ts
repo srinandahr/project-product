@@ -8,7 +8,13 @@ export class PuppeteerScraper implements ScraperStrategy {
         try {
             browser = await puppeteer.launch({
                 headless: true, // Run in background
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage', // Recommended for containerized environments
+                    '--disable-gpu'
+                ],
+                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
             });
             const page = await browser.newPage();
 

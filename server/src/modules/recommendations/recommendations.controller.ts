@@ -11,3 +11,16 @@ export const getRecommendations = async (req: any, res: Response) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+export const clearRecommendations = async (req: any, res: Response) => {
+    console.log('[Recommendations] Received DELETE / request');
+    try {
+        const userId = req.user.id;
+        console.log(`[Recommendations] Clearing for user: ${userId}`);
+        await recommendationsService.clearDailyRecommendations(userId);
+        res.json({ message: 'Recommendations cleared successfully' });
+    } catch (error: any) {
+        console.error('Error clearing recommendations:', error);
+        res.status(500).json({ error: error.message });
+    }
+};

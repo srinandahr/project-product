@@ -16,9 +16,10 @@ interface RecommendationsState {
     loading: boolean;
     error: string | null;
     fetchRecommendations: () => Promise<void>;
+    clearRecommendations: () => Promise<void>;
 }
 
-export const useRecommendationsStore = create<RecommendationsState>((set) => ({
+export const useRecommendationsStore = create<RecommendationsState>((set, get) => ({
     jobs: [],
     loading: false,
     error: null,
@@ -35,4 +36,17 @@ export const useRecommendationsStore = create<RecommendationsState>((set) => ({
             });
         }
     },
+    clearRecommendations: async () => {
+        set({ loading: true, error: null });
+        try {
+            await api.delete('/recommendations');
+            // After clearing, fetch new recommendations immediately
+            await get().fetchRecommendations();
+        } catch (error: any) {
+            set({
+                error: error.response?.data?.error || error.response?.data?.message || 'Failed to clear recommendations',
+                loading: false
+            });
+        }
+    }
 }));

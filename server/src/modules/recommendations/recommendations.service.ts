@@ -69,7 +69,19 @@ export const getDailyRecommendations = async (userId: string) => {
         // If file_url is relative 'uploads/resume.pdf', we might need to prepend root.
         // Assuming file_url is stored as absolute or relative to project root.
         // Let's try basic resolution if needed, but first try direct.
-        resumeText = await parseResume(resume.file_url);
+        let filePath = resume.file_url;
+        if (resume.file_url.startsWith('http')) {
+            // Convert URL to local path
+            // Format: http://host/uploads/resumes/filename.pdf
+            const filename = resume.file_url.split('/').pop();
+            const path = require('path');
+            if (filename) {
+                filePath = path.join(process.cwd(), 'uploads', 'resumes', filename);
+            }
+        }
+
+        console.log(`Parsing resume from local path: ${filePath}`);
+        resumeText = await parseResume(filePath);
         console.log(`Resume parsed successfully. Length: ${resumeText.length}`);
     } catch (e) {
         console.error('Resume parse failed, using fallback:', e);
@@ -109,10 +121,7 @@ export const getDailyRecommendations = async (userId: string) => {
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
 
-    // If not enough, fill with lower scores just to show something? 
-    // User said "atleast 70%", so strictly filter.
-    // If empty, we might need to lower threshold or mock "perfect matches".
-    // Let's force some mocks to have high scores if list is empty.
+    // If not enough, fill with lower scores just to show something
     if (topJobs.length === 0 && scoredJobs.length > 0) {
         // Fallback: take top 3 regardless of score
         topJobs.push(...scoredJobs.sort((a, b) => b.score - a.score).slice(0, 3));
@@ -135,4 +144,13 @@ export const getDailyRecommendations = async (userId: string) => {
     }
 
     return savedJobs;
+};
+
+export const clearDailyRecommendations = async (userId: string) => {
+    // Delete all recommendations for this user
+    // We could filter by date, but "clear" usually implies "start over now"
+    await prisma.recommendedJob.deleteMany({
+        where: { user_id: userId }
+    });
+    return { message: 'Recommendations cleared' };
 };

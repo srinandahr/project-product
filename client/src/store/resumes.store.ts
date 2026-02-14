@@ -58,11 +58,7 @@ export const useResumesStore = create<ResumesStore>((set, get) => ({
             // Send tags as JSON string
             formData.append('tags', JSON.stringify(resumeData.tags));
 
-            const response = await api.post('/resumes', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
+            const response = await api.post('/resumes', formData);
             const newBackendResume = response.data;
 
             // Map back to frontend
