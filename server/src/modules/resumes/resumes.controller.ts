@@ -33,7 +33,9 @@ export const createResume = async (req: AuthRequest, res: Response) => {
         const resume = await resumeService.createResume(req.user!.id, resumeData, fileBuffer, mimeType);
 
         // Update with the actual API URL
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        // Force HTTPS in production or use protocol from proxy
+        const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
+        const baseUrl = `${protocol}://${req.get('host')}`;
         const apiUrl = `${baseUrl}/api/resumes/${resume.id}/file`;
 
         await resumeService.updateResume(req.user!.id, resume.id, { file_url: apiUrl });

@@ -18,6 +18,7 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 app.use(express.json());
+app.set('trust proxy', 1); // Trust first proxy (Render/Heroku/Vercel)
 app.use('/uploads', express.static('uploads'));
 
 app.use('/api', router);
