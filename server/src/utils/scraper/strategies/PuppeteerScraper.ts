@@ -55,20 +55,26 @@ export class PuppeteerScraper implements ScraperStrategy {
             let jobs: JobResult[] = [];
 
             if (url.includes('nvidia.eightfold.ai')) {
-                jobs = await this.scrapeEightfold(page, url, 'Nvidia');
+                jobs = await this.scrapeGeneric(page, url, 'Nvidia');
             } else if (url.includes('aexp.eightfold.ai')) {
-                jobs = await this.scrapeEightfold(page, url, 'American Express');
+                jobs = await this.scrapeGeneric(page, url, 'American Express');
             } else if (url.includes('paypal.eightfold.ai')) {
-                jobs = await this.scrapeEightfold(page, url, 'Paypal');
+                jobs = await this.scrapeGeneric(page, url, 'Paypal');
             } else if (url.includes('metacareers.com')) {
                 jobs = await this.scrapeMeta(page, url);
             } else if (url.includes('google.com')) {
                 jobs = await this.scrapeGoogle(page, url);
             } else {
-                // Try generic if no specific match, or check other patterns
-                if (url.includes('eightfold.ai')) {
-                    jobs = await this.scrapeEightfold(page, url, 'Company');
-                }
+                // Generic fallback for any other site (Amazon, Apple, Stripe, AMD, etc.)
+                let company = 'Unknown';
+                if (url.includes('amazon')) company = 'Amazon';
+                else if (url.includes('apple')) company = 'Apple';
+                else if (url.includes('stripe')) company = 'Stripe';
+                else if (url.includes('amd')) company = 'AMD';
+                else if (url.includes('oracle')) company = 'Oracle';
+
+                // Use the generic/eightfold-style scraper which is robust enough for list-based sites
+                jobs = await this.scrapeGeneric(page, url, company);
             }
 
             console.log(`[Puppeteer] Found ${jobs.length} jobs`);
@@ -82,8 +88,8 @@ export class PuppeteerScraper implements ScraperStrategy {
         }
     }
 
-    private async scrapeEightfold(page: any, url: string, company: string): Promise<JobResult[]> {
-        console.log(`[Puppeteer] Navigating to ${url} for ${company}`);
+    private async scrapeGeneric(page: any, url: string, company: string): Promise<JobResult[]> {
+        console.log(`[Puppeteer] Generic scraping ${url} for ${company}`);
         // Wait for body to ensure page loaded
         await page.waitForSelector('body');
 
