@@ -1,5 +1,6 @@
 import prisma from '../../config/db';
 import { ScraperFactory } from '../../utils/scraper/ScraperFactory';
+import { JobResult } from '../../utils/scraper/ScraperInterface';
 import { parseResume } from '../../utils/resumeParser';
 import natural from 'natural';
 
@@ -108,9 +109,23 @@ export const getDailyRecommendations = async (userId: string) => {
 
     let allJobs: any[] = [];
 
-    // Parallel scraping
-    const scrapePromises = targets.map(url => ScraperFactory.getScraper(url).scrape(url));
-    const results = await Promise.all(scrapePromises);
+    // Serial scraping to prevent Memory Limit Exceeded on Render
+    // const scrapePromises = targets.map(url => ScraperFactory.getScraper(url).scrape(url));
+    // const results = await Promise.all(scrapePromises);
+
+    // Serial execution
+    const results: JobResult[][] = [];
+    for (const url of targets) {
+        try {
+            console.log(`Processing target: ${url}`);
+            const result = await ScraperFactory.getScraper(url).scrape(url);
+            results.push(result);
+            // Small delay between requests to be polite and let GC run
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (e) {
+            console.error(`Failed to scrape ${url}`, e);
+        }
+    }
 
     results.forEach(list => allJobs.push(...list));
 

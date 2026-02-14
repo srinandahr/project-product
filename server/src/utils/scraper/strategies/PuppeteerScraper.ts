@@ -9,17 +9,39 @@ export class PuppeteerScraper implements ScraperStrategy {
             const execPath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath();
             console.log(`[Puppeteer] Executable path is: ${execPath}`);
 
+            if (execPath) {
+                const fs = require('fs');
+                if (!fs.existsSync(execPath)) {
+                    console.error(`[Puppeteer] Error: Executable not found at ${execPath}`);
+                    throw new Error(`Browser executable not found at ${execPath}. Please run "npx puppeteer browsers install chrome"`);
+                }
+            }
+
             browser = await puppeteer.launch({
-                headless: true, // Run in background
+                headless: true,
+                dumpio: true, // Log browser errors to console
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage', // Recommended for containerized environments
-                    '--disable-gpu'
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--no-first-run',
+                    '--no-zygote'
                 ],
                 executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
             });
             const page = await browser.newPage();
+
+            // Optimize: Block images, fonts, css to save memory
+            await page.setRequestInterception(true);
+            page.on('request', (req) => {
+                const resourceType = req.resourceType();
+                if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+                    req.abort();
+                } else {
+                    req.continue();
+                }
+            });
 
             // Set realistic User-Agent
             await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
