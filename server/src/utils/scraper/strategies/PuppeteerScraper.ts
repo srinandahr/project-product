@@ -6,6 +6,9 @@ export class PuppeteerScraper implements ScraperStrategy {
         console.log(`[Puppeteer] Starting scrape for ${url}`);
         let browser;
         try {
+            const execPath = process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath();
+            console.log(`[Puppeteer] Executable path is: ${execPath}`);
+
             browser = await puppeteer.launch({
                 headless: true, // Run in background
                 args: [
