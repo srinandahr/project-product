@@ -3,6 +3,7 @@ node_modules
 dist
 coverage
 .DS_Store
+.cache
 
 /src/generated/prisma
 /uploads/resumes

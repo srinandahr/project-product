@@ -17,6 +17,7 @@ import { upload } from '../../middlewares/upload.middleware';
 
 router.post('/', upload.single('file'), resumeController.createResume);
 router.get('/', resumeController.getResumes);
+router.get('/:id/file', resumeController.serveResumeFile);
 router.patch('/:id', resumeController.updateResume);
 router.delete('/:id', resumeController.deleteResume);
 

@@ -57,7 +57,9 @@ model Resume {
   id         String   @id @default(uuid())
   user_id    String
   title      String
-  file_url   String
+  file_url   String // We'll keep this for backward compat or as a "virtual" path
+  data       Bytes? // Binary data of the file
+  mime_type  String? // e.g. application/pdf
   tags       String[]
   is_active  Boolean  @default(true)
   created_at DateTime @default(now())

@@ -16,12 +16,16 @@ import { format } from 'date-fns';
 import { useResumesStore } from '../../store/resumes.store';
 import { resumeTips } from '../../lib/resumeTips';
 
+import api from '../../lib/api';
+
 export default function Resumes() {
     const { resumes, fetchResumes, addResume, deleteResume, isLoading } = useResumesStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [resumeToDelete, setResumeToDelete] = useState<string | null>(null);
     const [viewResumeUrl, setViewResumeUrl] = useState<string | null>(null);
+    const [viewResumeTitle, setViewResumeTitle] = useState<string | null>(null);
     const [tips, setTips] = useState<string[]>([]);
+    const [viewBlobUrl, setViewBlobUrl] = useState<string | null>(null);
 
     React.useEffect(() => {
         const shuffled = [...resumeTips].sort(() => 0.5 - Math.random());
@@ -74,8 +78,9 @@ export default function Resumes() {
 
     const handleDownload = async (url: string, filename: string) => {
         try {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            // Use axios api instance to include Auth header
+            const response = await api.get(url, { responseType: 'blob' });
+            const blob = new Blob([response.data], { type: response.headers['content-type'] });
             const blobUrl = window.URL.createObjectURL(blob);
 
             const link = document.createElement('a');
@@ -87,17 +92,20 @@ export default function Resumes() {
             window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
             console.error('Download failed:', error);
+            // Fallback for public URLs or if auth fails and user wants to try direct
             window.open(url, '_blank');
         }
     };
 
-    const handleViewResume = async (url: string) => {
+    const handleViewResume = async (url: string, title: string) => {
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok');
-            const blob = await response.blob();
+            // Use axios api instance to include Auth header
+            const response = await api.get(url, { responseType: 'blob' });
+            const blob = new Blob([response.data], { type: response.headers['content-type'] || 'application/pdf' });
             const blobUrl = window.URL.createObjectURL(blob);
             setViewResumeUrl(blobUrl);
+            setViewResumeTitle(title);
+            setViewBlobUrl(blobUrl); // Track blob URL to revoke later
         } catch (error) {
             console.error('View failed:', error);
             window.open(url, '_blank');
@@ -179,7 +187,7 @@ export default function Resumes() {
 
                             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
-                                    onClick={() => handleViewResume(resume.fileUrl)}
+                                    onClick={() => handleViewResume(resume.fileUrl, resume.title)}
                                     className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground"
                                     title="View"
                                 >
@@ -362,10 +370,12 @@ export default function Resumes() {
                             <h3 className="font-bold text-foreground">Resume Preview</h3>
                             <button
                                 onClick={() => {
-                                    if (viewResumeUrl?.startsWith('blob:')) {
-                                        window.URL.revokeObjectURL(viewResumeUrl);
+                                    if (viewBlobUrl) {
+                                        window.URL.revokeObjectURL(viewBlobUrl);
+                                        setViewBlobUrl(null);
                                     }
                                     setViewResumeUrl(null);
+                                    setViewResumeTitle(null);
                                 }}
                                 className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-all"
                             >
@@ -382,7 +392,7 @@ export default function Resumes() {
                         <div className="p-4 border-t border-border flex justify-end">
                             <a
                                 href={viewResumeUrl}
-                                download
+                                download={`${viewResumeTitle || 'resume'}.pdf`}
                                 className="flex items-center gap-2 bg-primary hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-all font-medium text-sm"
                             >
                                 <Download size={16} />

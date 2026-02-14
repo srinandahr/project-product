@@ -64,24 +64,29 @@ export const getDailyRecommendations = async (userId: string) => {
     // 3. Parse Resume
     let resumeText = "";
     try {
-        console.log(`Parsing resume from: ${resume.file_url}`);
-        // Ensure we are reading from the correct path. 
-        // If file_url is relative 'uploads/resume.pdf', we might need to prepend root.
-        // Assuming file_url is stored as absolute or relative to project root.
-        // Let's try basic resolution if needed, but first try direct.
-        let filePath = resume.file_url;
-        if (resume.file_url.startsWith('http')) {
-            // Convert URL to local path
-            // Format: http://host/uploads/resumes/filename.pdf
-            const filename = resume.file_url.split('/').pop();
-            const path = require('path');
-            if (filename) {
-                filePath = path.join(process.cwd(), 'uploads', 'resumes', filename);
+        if (resume.data) {
+            console.log(`Parsing resume from DB buffer. Size: ${resume.data.length}`);
+            resumeText = await parseResume(resume.data);
+        } else {
+            console.log(`Parsing resume from file path: ${resume.file_url}`);
+            // Fallback for legacy resumes stored on disk
+            let filePath = resume.file_url;
+            if (resume.file_url.startsWith('http')) {
+                const filename = resume.file_url.split('/').pop();
+                const path = require('path');
+                if (filename) {
+                    filePath = path.join(process.cwd(), 'uploads', 'resumes', filename);
+                }
+            }
+            // Check if file exists before trying to parse
+            const fs = require('fs');
+            if (fs.existsSync(filePath)) {
+                resumeText = await parseResume(filePath);
+            } else {
+                console.warn(`Resume file not found at ${filePath}, using default text.`);
+                resumeText = "Software Engineer Javascript React Node.js Typescript";
             }
         }
-
-        console.log(`Parsing resume from local path: ${filePath}`);
-        resumeText = await parseResume(filePath);
         console.log(`Resume parsed successfully. Length: ${resumeText.length}`);
     } catch (e) {
         console.error('Resume parse failed, using fallback:', e);

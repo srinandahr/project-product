@@ -4,14 +4,14 @@ import * as resumeService from './resumes.service';
 
 export const createResume = async (req: AuthRequest, res: Response) => {
     try {
-        let fileUrl = req.body.file_url;
+        let fileBuffer: Buffer | undefined;
+        let mimeType: string | undefined;
+        let originalName = 'resume.pdf';
 
         if (req.file) {
-            // Construct URL for uploaded file
-            // Assuming server is running on localhost/domain. 
-            // Ideally base URL should be from env config.
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
-            fileUrl = `${baseUrl}/uploads/resumes/${req.file.filename}`;
+            fileBuffer = req.file.buffer;
+            mimeType = req.file.mimetype;
+            originalName = req.file.originalname;
         }
 
         let tags = req.body.tags;
@@ -19,19 +19,27 @@ export const createResume = async (req: AuthRequest, res: Response) => {
             try {
                 tags = JSON.parse(tags);
             } catch (e) {
-                // Ignore error, might be plain string or invalid json, validation will handle it
                 tags = [tags];
             }
         }
 
+        // We use a placeholder URL initially, then update it with the ID-based API URL
         const resumeData = {
             ...req.body,
             tags,
-            file_url: fileUrl
+            file_url: 'http://placeholder/pending' // Placeholder to satisfy Zod .url()
         };
 
-        const resume = await resumeService.createResume(req.user!.id, resumeData);
-        res.status(201).json(resume);
+        const resume = await resumeService.createResume(req.user!.id, resumeData, fileBuffer, mimeType);
+
+        // Update with the actual API URL
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const apiUrl = `${baseUrl}/api/resumes/${resume.id}/file`;
+
+        await resumeService.updateResume(req.user!.id, resume.id, { file_url: apiUrl });
+
+        // Return the resume with the correct URL
+        res.status(201).json({ ...resume, file_url: apiUrl });
     } catch (error: any) {
         res.status(400).json({ error: error.message });
     }
@@ -43,6 +51,28 @@ export const getResumes = async (req: AuthRequest, res: Response) => {
         res.json(resumes);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+export const serveResumeFile = async (req: AuthRequest, res: Response) => {
+    try {
+        const resumeId = req.params.id as string;
+        const resume = await resumeService.getResumeFile(req.user!.id, resumeId);
+
+        if (!resume || !resume.data) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
+        res.setHeader('Content-Type', resume.mime_type || 'application/pdf');
+        // prompt for download (attachment) or inline view? 
+        // User wants "View", so 'inline' is better, but maybe allow toggle?
+        // Defaulting to inline for PDF viewing in iframe.
+        res.setHeader('Content-Disposition', 'inline; filename="resume.pdf"');
+
+        res.send(resume.data);
+    } catch (error: any) {
+        console.error('Error serving resume:', error);
+        res.status(500).json({ error: 'Failed to retrieve file' });
     }
 };
 
